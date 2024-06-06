@@ -13,6 +13,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
 
 public class App extends Application {
     private static ObservableList<Clients> clientsList = FXCollections.observableArrayList();
+    private static TableView.TableViewSelectionModel<Clients> selectionModel;
     private static TableView<Clients> tv;
     private static TextField nameTX, phoneTX, addressTX, birthTX;
     private EventHandler<MouseEvent> saveClients = e -> {
@@ -91,7 +93,18 @@ public class App extends Application {
             }catch (IllegalArgumentException ex2){
                 birthTX.setStyle("-fx-text-fill: red;");
             }
+        }
+    };
 
+    private EventHandler<MouseEvent> deleteClient = e -> {};
+
+    private EventHandler<KeyEvent> setColor = e -> {
+        TextField selected = (TextField) e.getSource();
+
+        if(selected.equals(phoneTX)){
+            phoneTX.setStyle("-fx-text-fill: black;");
+        }else{
+            birthTX.setStyle("-fx-text-fill: black;");
         }
 
     };
@@ -128,6 +141,8 @@ public class App extends Application {
         tv.getColumns().addAll(nameColumn,phoneColumn,addressColumn,birthColumn);
         tv.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
+        selectionModel = tv.getSelectionModel();
+
         /*Mapeamos el tableview al observableList*/
         Property<ObservableList<Clients>> clientsListProperty = new SimpleListProperty<>(clientsList);
         tv.itemsProperty().bind(clientsListProperty);
@@ -143,6 +158,9 @@ public class App extends Application {
         addressTX = new TextField();
         Label birthLabel = new Label("Birth");
         birthTX = new TextField();
+
+        phoneTX.setOnKeyPressed(setColor);
+        birthTX.setOnKeyPressed(setColor);
 
         GridPane gp = new GridPane();
         gp.addColumn(1, nameLabel,phoneLabel,addressLabel,birthLabel);
@@ -164,6 +182,13 @@ public class App extends Application {
         bp.setLeft(vb);
 
         //Bottom
+        Button deleteItemButon = new Button("Remove item");
+
+        bp.setBottom(deleteItemButon);
+
+        /*Styles*/
+        BorderPane.setAlignment(deleteItemButon, Pos.TOP_RIGHT);
+        BorderPane.setMargin(deleteItemButon, new Insets(10));
 
         Scene scene = new Scene(bp, 800, 400);
         stage.setScene(scene);
