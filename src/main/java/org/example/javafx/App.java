@@ -1,5 +1,6 @@
 package org.example.javafx;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import javafx.application.Application;
@@ -17,11 +18,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,13 +33,35 @@ public class App extends Application {
     private static ObservableList<Clients> clientsList = FXCollections.observableArrayList();
     private static TableView.TableViewSelectionModel<Clients> selectionModel;
     private static TableView<Clients> tv;
-    private static TextField nameTX, phoneTX, addressTX, birthTX;
+    private static TextField nameFileTX, nameTX, phoneTX, addressTX, birthTX;
+    private static File file = null;
+
+    private EventHandler<MouseEvent> openFile = e -> {
+        var objectMapper = new ObjectMapper();
+        List<Clients> clientsFile;
+
+        try{
+            clientsFile = objectMapper.readValue(file, new TypeReference<>() {});
+            clientsList.clear();
+            clientsList.addAll(clientsFile);
+
+            var nameFile = file.getName();
+            nameFileTX.setText(nameFile);
+
+        }catch (IOException ex){
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Error al abrir el archivo");
+            alert.showAndWait();
+        }
+    };
+
     private EventHandler<MouseEvent> saveClients = e -> {
         var objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 
+        var nameFile = nameFileTX.getText();
+
         try{
-            objectMapper.writeValue(new File("clients.json"), clientsList);
+            objectMapper.writeValue(new File(nameFile), clientsList);
 
         }catch (IOException ex){
             Alert alert = new Alert(Alert.AlertType.ERROR, "Error al guardar el archivo");
@@ -96,7 +122,12 @@ public class App extends Application {
         }
     };
 
-    private EventHandler<MouseEvent> deleteClient = e -> {};
+    private EventHandler<MouseEvent> deleteClient = e -> {
+        Clients selected = selectionModel.getSelectedItem();
+
+        clientsList.remove(selected);
+
+    };
 
     private EventHandler<KeyEvent> setColor = e -> {
         TextField selected = (TextField) e.getSource();
@@ -113,13 +144,24 @@ public class App extends Application {
     public void start(Stage stage) {
         BorderPane bp = new BorderPane();
 
+        // Diálogo de selección de archivo
+        var fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File("./"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivos JSON", "*.json"));
+
         //Top
-        Button openFile = new Button("Open file");
+        Button openFileButton = new Button("Open file");
         Button saveFile = new Button("Save file");
         saveFile.setOnMouseClicked(saveClients);
+        openFileButton.setOnMouseClicked(e -> {
+            file = fileChooser.showOpenDialog(stage);
+            if(file != null){
+                openFile.handle(e);
+            }
+        });
 
         ToolBar tb;
-        tb = new ToolBar(openFile, saveFile);
+        tb = new ToolBar(openFileButton, saveFile);
 
         /*Styles*/
         tb.setPadding(new Insets(10));
@@ -150,6 +192,12 @@ public class App extends Application {
         bp.setCenter(tv);
 
         //Left
+        Label fileLabel = new Label("File name");
+        nameFileTX = new TextField();
+
+        HBox hb;
+        hb = new HBox(fileLabel, nameFileTX);
+
         Label nameLabel = new Label("Name");
         nameTX = new TextField();
         Label phoneLabel = new Label("Phone");
@@ -170,12 +218,14 @@ public class App extends Application {
         addClientButton.setOnMouseClicked(addClients);
 
         VBox vb;
-        vb = new VBox(gp, addClientButton);
+        vb = new VBox(hb, gp, addClientButton);
 
         /*Styles*/
+        gp.setPadding(new Insets(40,0,0,0));
         gp.setVgap(10);
         gp.setHgap(10);
-        vb.setAlignment(Pos.CENTER);
+        hb.setSpacing(10);
+        vb.setAlignment(Pos.TOP_CENTER);
         vb.setPadding(new Insets(10));
         vb.setSpacing(20);
 
@@ -183,6 +233,7 @@ public class App extends Application {
 
         //Bottom
         Button deleteItemButon = new Button("Remove item");
+        deleteItemButon.setOnMouseClicked(deleteClient);
 
         bp.setBottom(deleteItemButon);
 
