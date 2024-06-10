@@ -55,17 +55,27 @@ public class App extends Application {
     };
 
     private EventHandler<MouseEvent> saveClients = e -> {
-        var objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        if(!nameFileTX.getText().isEmpty()){
+            var objectMapper = new ObjectMapper();
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 
-        var nameFile = nameFileTX.getText();
+            var nameFile = nameFileTX.getText();
 
-        try{
-            objectMapper.writeValue(new File(nameFile), clientsList);
+            try{
+                objectMapper.writeValue(new File(nameFile), clientsList);
 
-        }catch (IOException ex){
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Error al guardar el archivo");
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Datos guardados correctamente");
+                alert.showAndWait();
+
+            }catch (IOException ex){
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Error al guardar el archivo");
+                alert.showAndWait();
+            }
+        }else{
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Por favor, indica el nombre del archivo para guardar los datos");
             alert.showAndWait();
+
+            nameFileTX.setStyle("-fx-border-color: red;");
         }
     };
 
@@ -88,7 +98,7 @@ public class App extends Application {
                 try{
                     birth = birthTX.getText();
 
-                    pattern = Pattern.compile("\\d{0,2}/\\d{0,2}/\\d{0,4}");
+                    pattern = Pattern.compile("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/((195[0-9]|19[6-9][0-9]|200[0-9]|201[0-9]|202[0-4]))$");
                     matcher = pattern.matcher(birth);
 
                     if(!matcher.matches()){
@@ -109,7 +119,7 @@ public class App extends Application {
             try{
                 birth = birthTX.getText();
 
-                Pattern pattern = Pattern.compile("\\d{0,2}/\\d{0,2}/\\d{0,4}");
+                Pattern pattern = Pattern.compile("^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/((195[0-9]|19[6-9][0-9]|200[0-9]|201[0-9]|202[0-4]))$");
                 Matcher matcher = pattern.matcher(birth);
 
                 if(!matcher.matches()){
@@ -123,9 +133,15 @@ public class App extends Application {
     };
 
     private EventHandler<MouseEvent> deleteClient = e -> {
-        Clients selected = selectionModel.getSelectedItem();
 
-        clientsList.remove(selected);
+        if(!clientsList.isEmpty()){
+            Clients selected = selectionModel.getSelectedItem();
+
+            clientsList.remove(selected);
+        }else{
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No hay elementos que eliminar");
+            alert.showAndWait();
+        }
 
     };
 
@@ -137,6 +153,12 @@ public class App extends Application {
         }else{
             birthTX.setStyle("-fx-text-fill: black;");
         }
+
+    };
+
+    private EventHandler<MouseEvent> setBorder = e -> {
+
+        nameFileTX.setStyle("-fx-border-color: rgba(0,0,0,0);");
 
     };
 
@@ -194,6 +216,8 @@ public class App extends Application {
         //Left
         Label fileLabel = new Label("File name");
         nameFileTX = new TextField();
+        nameFileTX.setPromptText("example.json");
+        nameFileTX.setOnMouseClicked(setBorder);
 
         HBox hb;
         hb = new HBox(fileLabel, nameFileTX);
@@ -206,6 +230,7 @@ public class App extends Application {
         addressTX = new TextField();
         Label birthLabel = new Label("Birth");
         birthTX = new TextField();
+        birthTX.setPromptText("dd/mm/aaaa");
 
         phoneTX.setOnKeyPressed(setColor);
         birthTX.setOnKeyPressed(setColor);
